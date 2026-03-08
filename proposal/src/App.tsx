@@ -1,519 +1,809 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-const hearts = ["❤️", "💕", "💖", "💗", "💓", "💝", "🥰", "😍"];
-const excuses = [
-  "You laugh at my jokes even when they're terrible.",
-  "You pretend not to notice when I eat the last snack.",
-  "You still like me even after seeing my morning face.",
-  "You tolerate my weird music choices without (much) complaint.",
-  "You're the only one who gets my chaotic brain.",
-  "You make boring errands feel like adventures.",
-  "You haven't blocked me yet. That's true love.",
+/* ─────────────────────────────────────────────
+   POETIC VERSES — beautiful Malayalam poetry
+   Each verse unlocks as the reader "blooms" it
+───────────────────────────────────────────── */
+const VERSES = [
+  {
+    id: 1,
+    icon: "🌙",
+    malayalam: "നീ ഒരു കവിതയാണ്,\nഞാൻ ഇനിയും വായിച്ചു തീർന്നിട്ടില്ലാത്ത...",
+    transliteration: "Nee oru kavithayāṇ,\njñān iniyum vāyichu thīrnniṭṭillātha...",
+    meaning: "You are a poem I haven't finished reading yet",
+    color: "#f9a8d4",
+  },
+  {
+    id: 2,
+    icon: "🌸",
+    malayalam: "മഴ പോലെ നീ വന്നു,\nഉള്ളിലെ വേനൽ മറന്നു പോയി...",
+    transliteration: "Mazha pole nee vannu,\nullile vēnal marannupōyi...",
+    meaning: "Like rain you came, and I forgot the summer inside",
+    color: "#fda4af",
+  },
+  {
+    id: 3,
+    icon: "✨",
+    malayalam: "നിന്റെ ചിരി — ഒരു നിലാവ്,\nതാരങ്ങൾ നാണിച്ചു പോകുന്ന...",
+    transliteration: "Ninte chiri — oru nilāv,\nthārangaḷ nāṇichu pōkunna...",
+    meaning: "Your smile — a moonlight that makes the stars blush",
+    color: "#f0abfc",
+  },
+  {
+    id: 4,
+    icon: "🌺",
+    malayalam: "ഈ ഹൃദയം ഒരു കടൽ ആണ്,\nനീ മാത്രം അതിന്റെ തീരം...",
+    transliteration: "Ee hṛdayam oru kaṭal āṇ,\nnee māthram atinte thīram...",
+    meaning: "This heart is an ocean, and you alone are its shore",
+    color: "#fb7185",
+  },
+  {
+    id: 5,
+    icon: "🦋",
+    malayalam: "നിന്നോടൊപ്പം ഇരിക്കുമ്പോൾ,\nവാക്കുകൾ പൂക്കളാകുന്നു...",
+    transliteration: "Ninnōṭoppam irikkumpōḷ,\nvākkukaḷ pūkkaḷākunnu...",
+    meaning: "When I am with you, words bloom into flowers",
+    color: "#e879f9",
+  },
 ];
 
-const noButtonMessages = [
-  "Are you sure? 🥺",
-  "That seems wrong...",
-  "Think again!",
-  "My heart is breaking 💔",
-  "The button lied. Click YES.",
-  "Error 404: Good decision not found",
-  "Last chance... 👀",
-  "This button is broken, try YES",
-];
+/* ── FLOATING PETAL PARTICLE ── */
+type Petal = { id: number; x: string; y: string; size: number; dur: number; delay: number; char: string };
 
-function FloatingHeart({ id, x, emoji, onDone }) {
-  useEffect(() => {
-    const t = setTimeout(() => onDone(id), 2800);
-    return () => clearTimeout(t);
-  }, [id, onDone]);
-  return (
-    <span
-      style={{
-        position: "fixed",
-        left: x,
-        bottom: "10%",
-        fontSize: "2rem",
-        animation: "floatUp 2.8s ease-out forwards",
-        pointerEvents: "none",
-        zIndex: 999,
-        userSelect: "none",
-      }}
-    >
-      {emoji}
-    </span>
-  );
-}
+function usePetals() {
+  const [petals, setPetals] = useState<Petal[]>([]);
+  const counter = useRef(0);
 
-export default function App() {
-  const [stage, setStage] = useState(0); // 0=intro, 1=reasons, 2=question, 3=yes
-  const [reasonIdx, setReasonIdx] = useState(0);
-  const [noCount, setNoCount] = useState(0);
-  const [yesScale, setYesScale] = useState(1);
-  const [noPos, setNoPos] = useState({ x: null, y: null });
-  const [floatingHearts, setFloatingHearts] = useState([]);
-  const [shake, setShake] = useState(false);
-  const heartIdRef = useRef(0);
-  const containerRef = useRef(null);
-
-  const spawnHearts = () => {
-    const newHearts = Array.from({ length: 6 }, () => {
-      heartIdRef.current += 1;
+  const burst = useCallback((count = 12) => {
+    const chars = ["🌸", "🌺", "✿", "❀", "💮", "🌷", "💕", "✨", "🌼"];
+    const newP: Petal[] = Array.from({ length: count }, () => {
+      counter.current += 1;
       return {
-        id: heartIdRef.current,
-        x: Math.random() * 90 + "%",
-        emoji: hearts[Math.floor(Math.random() * hearts.length)],
+        id: counter.current,
+        x: Math.random() * 95 + "%",
+        y: Math.random() * 30 + 60 + "%",
+        size: 1 + Math.random() * 1.2,
+        dur: 3 + Math.random() * 2,
+        delay: Math.random() * 0.8,
+        char: chars[Math.floor(Math.random() * chars.length)],
       };
     });
-    setFloatingHearts((prev) => [...prev, ...newHearts]);
-  };
+    setPetals(p => [...p, ...newP]);
+    setTimeout(() => setPetals(p => p.filter(x => !newP.find(n => n.id === x.id))), 6000);
+  }, []);
 
-  const removeHeart = (id) => {
-    setFloatingHearts((prev) => prev.filter((h) => h.id !== id));
-  };
+  return { petals, burst };
+}
 
-  const handleNo = () => {
-    const next = noCount + 1;
-    setNoCount(next);
-    setYesScale((s) => Math.min(s + 0.3, 3.5));
-    setShake(true);
-    setTimeout(() => setShake(false), 500);
-    // Move NO button to random position
-    const maxX = (containerRef.current?.offsetWidth || 400) - 120;
-    const maxY = (containerRef.current?.offsetHeight || 400) - 60;
-    setNoPos({
-      x: Math.random() * maxX,
-      y: Math.random() * maxY,
+/* ── MAIN ── */
+export default function MalayalamLoveProposal() {
+  const [phase, setPhase] = useState<"intro" | "blooming" | "question" | "yes">("intro");
+  const [unlockedIdx, setUnlockedIdx] = useState(-1);
+  const [noCount, setNoCount] = useState(0);
+  const [noStyle, setNoStyle] = useState<React.CSSProperties>({});
+  const [yesGrow, setYesGrow] = useState(1);
+  const [activeVerse, setActiveVerse] = useState<number | null>(null);
+  const { petals, burst } = usePetals();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-unlock verses one by one
+  useEffect(() => {
+    if (phase !== "blooming") return;
+    if (unlockedIdx >= VERSES.length - 1) return;
+    const t = setTimeout(() => setUnlockedIdx(i => i + 1), unlockedIdx === -1 ? 400 : 1100);
+    return () => clearTimeout(t);
+  }, [phase, unlockedIdx]);
+
+  const handleNoClick = () => {
+    const n = noCount + 1;
+    setNoCount(n);
+    setYesGrow(g => Math.min(g + 0.22, 2.8));
+    const w = containerRef.current?.offsetWidth ?? 400;
+    const h = containerRef.current?.offsetHeight ?? 600;
+    setNoStyle({
+      position: "absolute",
+      left: Math.random() * (w - 130) + "px",
+      top: Math.random() * (h - 50) + "px",
     });
+    burst(6);
   };
 
   const handleYes = () => {
-    setStage(3);
-    spawnHearts();
-    const interval = setInterval(spawnHearts, 800);
-    setTimeout(() => clearInterval(interval), 5000);
+    setPhase("yes");
+    burst(20);
+    const iv = setInterval(() => burst(10), 800);
+    setTimeout(() => clearInterval(iv), 7000);
   };
 
-  const currentNoMsg = noButtonMessages[Math.min(noCount, noButtonMessages.length - 1)];
+  const noLabels = [
+    "ഇല്ല... 🙈", "ഉം... ഇല്ല?", "ഓ.. ഒന്ന് കൂടി?", "ഒളിക്കുകയാണ്! 🏃",
+    "Button ഓടി! 😂", "ഇനി ഇവിടെ ഇല്ല~", "ഞാൻ invisible 🫥",
+  ];
+  const noLabel = noLabels[Math.min(noCount, noLabels.length - 1)];
+
+  const noCountMsgs = [
+    "", "ഒന്ന് കൂടി ആലോചിക്ക്... 🌸", "Button-ന് ലജ്ജ ഉണ്ട് 😳",
+    "ഓടി തളർന്നു! 😩", "YES ഇപ്പൊ ഒരു മരം 🌳", "ഈ button marathon ഓടുന്നു 🏅",
+  ];
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Tiro+Malayalam:ital@0;1&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Serif+Display:ital@0;1&display=swap');
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+          --rose:    #f43f7f;
+          --blush:   #fda4af;
+          --petal:   #fce7f3;
+          --soft:    #fff1f7;
+          --mauve:   #d946a8;
+          --lilac:   #f0abfc;
+          --cream:   #fff8fb;
+          --text:    #4a1942;
+          --muted:   #c084a0;
+        }
+
+        html, body { height: 100%; overflow-x: hidden; }
 
         body {
-          background: #fff0f5;
+          font-family: 'Cormorant Garamond', serif;
+          background: var(--soft);
           min-height: 100vh;
-          font-family: 'Nunito', sans-serif;
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ctext y='18' font-size='16'%3E🌸%3C/text%3E%3C/svg%3E") 12 12, auto;
         }
 
-        @keyframes floatUp {
-          0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(-80vh) scale(0.4) rotate(30deg); opacity: 0; }
+        /* ── PETALS ── */
+        @keyframes petalDrift {
+          0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+          80%  { opacity: 0.6; }
+          100% { transform: translateY(-110vh) rotate(540deg) scale(0.2); opacity: 0; }
+        }
+        .petal-fixed {
+          position: fixed;
+          pointer-events: none;
+          z-index: 9999;
+          user-select: none;
         }
 
-        @keyframes bop {
-          0%, 100% { transform: scale(1) rotate(-2deg); }
-          50%       { transform: scale(1.08) rotate(2deg); }
-        }
-
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(0deg); }
-          25%       { transform: rotate(-6deg); }
-          75%       { transform: rotate(6deg); }
-        }
-
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          20%       { transform: translateX(-8px); }
-          40%       { transform: translateX(8px); }
-          60%       { transform: translateX(-6px); }
-          80%       { transform: translateX(6px); }
-        }
-
-        @keyframes popIn {
-          0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
-          70%  { transform: scale(1.1) rotate(3deg); opacity: 1; }
-          100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50%       { transform: translateY(-12px); }
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-
-        @keyframes starPop {
-          0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
-          60%  { transform: scale(1.3) rotate(10deg); opacity: 1; }
-          100% { transform: scale(1) rotate(0deg); }
-        }
-
-        @keyframes slideUp {
-          from { transform: translateY(40px); opacity: 0; }
-          to   { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes rainbowText {
-          0%   { color: #ff6b9d; }
-          16%  { color: #ff9f43; }
-          33%  { color: #ffd93d; }
-          50%  { color: #6bcb77; }
-          66%  { color: #4d96ff; }
-          83%  { color: #c77dff; }
-          100% { color: #ff6b9d; }
-        }
-
-        .page-wrap {
+        /* ── BG MESH ── */
+        .page-bg {
           min-height: 100vh;
+          background:
+            radial-gradient(ellipse 80% 60% at 20% 10%, #ffe4ef 0%, transparent 60%),
+            radial-gradient(ellipse 60% 70% at 80% 80%, #fce7f3 0%, transparent 60%),
+            radial-gradient(ellipse 40% 40% at 50% 50%, #fff0fa 0%, transparent 70%),
+            linear-gradient(160deg, #fff1f7 0%, #fce7f3 50%, #fdf4ff 100%);
           display: flex;
+          flex-direction: column;
           align-items: center;
-          justify-content: center;
-          padding: 24px;
-          background: radial-gradient(ellipse at 30% 20%, #ffe0ec 0%, #fff0f5 40%, #fde8ff 100%);
-        }
-
-        .card {
-          background: white;
-          border-radius: 32px;
-          padding: 48px 40px;
-          max-width: 520px;
-          width: 100%;
-          box-shadow:
-            0 0 0 3px #ffb3cf,
-            0 20px 60px rgba(255, 100, 150, 0.2),
-            0 4px 20px rgba(0,0,0,0.06);
-          text-align: center;
+          justify-content: flex-start;
+          padding: 0 16px 80px;
           position: relative;
           overflow: hidden;
         }
 
-        .card::before {
-          content: '';
-          position: absolute;
-          top: -40px; right: -40px;
-          width: 160px; height: 160px;
-          background: radial-gradient(circle, #ffe0ec 0%, transparent 70%);
+        /* ── DECORATIVE CIRCLES ── */
+        .deco-circle {
+          position: fixed;
           border-radius: 50%;
+          pointer-events: none;
+          z-index: 0;
         }
 
-        .mascot {
-          font-size: 5rem;
-          animation: bop 1.6s ease-in-out infinite;
+        /* ── HEADER ── */
+        .site-header {
+          width: 100%;
+          max-width: 580px;
+          text-align: center;
+          padding: 52px 0 24px;
+          position: relative;
+          z-index: 2;
+        }
+        .site-header .eyebrow {
+          font-family: 'DM Serif Display', serif;
+          font-style: italic;
+          font-size: 0.88rem;
+          color: var(--muted);
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          margin-bottom: 14px;
           display: block;
-          margin-bottom: 12px;
-          line-height: 1;
+          animation: fadeSlide 0.8s ease both;
         }
-
-        .title {
-          font-family: 'Pacifico', cursive;
-          font-size: 2rem;
-          color: #e84393;
-          margin-bottom: 12px;
-          animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        .site-header h1 {
+          font-family: 'Tiro Malayalam', serif;
+          font-size: clamp(2rem, 6vw, 3rem);
+          color: var(--text);
+          line-height: 1.35;
+          font-weight: 400;
+          margin-bottom: 10px;
+          animation: fadeSlide 0.9s 0.15s ease both;
         }
-
-        .subtitle {
+        .site-header .sub {
+          font-style: italic;
           font-size: 1rem;
-          color: #a0627a;
-          line-height: 1.6;
-          margin-bottom: 28px;
-          animation: slideUp 0.5s 0.3s ease both;
+          color: var(--muted);
+          animation: fadeSlide 0.9s 0.3s ease both;
         }
 
-        .btn-primary {
-          background: linear-gradient(135deg, #ff6b9d, #e84393);
-          color: white;
-          border: none;
-          border-radius: 50px;
-          padding: 14px 36px;
-          font-family: 'Nunito', sans-serif;
-          font-size: 1.05rem;
-          font-weight: 900;
-          cursor: pointer;
-          box-shadow: 0 6px 20px rgba(232, 67, 147, 0.35);
-          transition: transform 0.15s, box-shadow 0.15s;
-          animation: popIn 0.5s 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-        }
-        .btn-primary:hover {
-          transform: scale(1.06) translateY(-2px);
-          box-shadow: 0 10px 28px rgba(232, 67, 147, 0.4);
-        }
-        .btn-primary:active { transform: scale(0.97); }
-
-        /* REASON CARD */
-        .reason-badge {
-          background: #fff0f7;
-          border: 2px dashed #ffb3cf;
-          border-radius: 20px;
-          padding: 20px 24px;
-          margin: 20px 0;
-          font-size: 1.05rem;
-          color: #c2185b;
-          font-weight: 700;
-          animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-          min-height: 80px;
+        /* ── DIVIDER ── */
+        .divider {
           display: flex;
           align-items: center;
-          justify-content: center;
+          gap: 12px;
+          margin: 28px 0;
+          width: 100%;
+          max-width: 420px;
+        }
+        .divider-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--blush), transparent); }
+        .divider-icon { color: var(--rose); font-size: 1.1rem; }
+
+        /* ── INTRO CARD ── */
+        @keyframes fadeSlide {
+          from { opacity: 0; transform: translateY(22px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes heartbeat {
+          0%,100% { transform: scale(1); }
+          14%     { transform: scale(1.15); }
+          28%     { transform: scale(1); }
+          42%     { transform: scale(1.1); }
+        }
+        @keyframes floatGently {
+          0%,100% { transform: translateY(0px) rotate(-1deg); }
+          50%      { transform: translateY(-10px) rotate(1deg); }
+        }
+        @keyframes shimmer {
+          from { background-position: -200% center; }
+          to   { background-position: 200% center; }
+        }
+        @keyframes ringPulse {
+          0%   { box-shadow: 0 0 0 0 rgba(244,63,127,0.35); }
+          70%  { box-shadow: 0 0 0 22px rgba(244,63,127,0); }
+          100% { box-shadow: 0 0 0 0 rgba(244,63,127,0); }
+        }
+        @keyframes verseReveal {
+          from { opacity: 0; transform: translateY(30px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes bloomIn {
+          0%   { opacity: 0; transform: scale(0.5) rotate(-8deg); }
+          60%  { transform: scale(1.08) rotate(2deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes twinkle {
+          0%,100% { opacity: 1; transform: scale(1); }
+          50%      { opacity: 0.4; transform: scale(0.7); }
+        }
+        @keyframes gradientShift {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
 
-        .progress-dots {
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          margin-bottom: 20px;
-        }
-        .dot {
-          width: 10px; height: 10px;
-          border-radius: 50%;
-          background: #ffd6e7;
-          transition: background 0.3s, transform 0.3s;
-        }
-        .dot.active { background: #e84393; transform: scale(1.3); }
-        .dot.done   { background: #ffb3cf; }
-
-        /* QUESTION STAGE */
-        .question-zone {
+        .glass-card {
+          background: rgba(255,255,255,0.72);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          border: 1.5px solid rgba(253,164,175,0.4);
+          border-radius: 32px;
+          padding: 44px 36px;
+          max-width: 560px;
+          width: 100%;
+          box-shadow:
+            0 4px 40px rgba(244,63,127,0.08),
+            0 1px 0 rgba(255,255,255,0.9) inset,
+            0 -1px 0 rgba(253,164,175,0.2) inset;
           position: relative;
-          min-height: 160px;
+          z-index: 2;
+          text-align: center;
+          animation: fadeSlide 0.8s ease both;
         }
 
-        .yes-btn {
-          background: linear-gradient(135deg, #ff6b9d, #e84393);
+        .big-heart {
+          font-size: 5rem;
+          display: block;
+          margin-bottom: 16px;
+          animation: heartbeat 2.4s ease-in-out infinite, floatGently 4s ease-in-out infinite;
+          line-height: 1;
+          filter: drop-shadow(0 6px 20px rgba(244,63,127,0.35));
+        }
+
+        .intro-ml {
+          font-family: 'Tiro Malayalam', serif;
+          font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+          color: var(--text);
+          line-height: 1.7;
+          margin-bottom: 10px;
+        }
+        .intro-en {
+          font-style: italic;
+          font-size: 0.95rem;
+          color: var(--muted);
+          margin-bottom: 32px;
+          line-height: 1.6;
+        }
+
+        /* ── BTN ── */
+        .btn-bloom {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          background: linear-gradient(135deg, #f43f7f 0%, #d946a8 50%, #f43f7f 100%);
+          background-size: 200% auto;
           color: white;
           border: none;
           border-radius: 50px;
-          padding: 16px 48px;
-          font-family: 'Nunito', sans-serif;
-          font-weight: 900;
-          cursor: pointer;
-          box-shadow: 0 6px 20px rgba(232, 67, 147, 0.4);
-          transition: transform 0.15s, box-shadow 0.15s;
-          margin: 8px;
+          padding: 15px 40px;
+          font-family: 'Cormorant Garamond', serif;
           font-size: 1.1rem;
-        }
-        .yes-btn:hover {
-          transform: scale(1.07) translateY(-2px);
-          box-shadow: 0 10px 30px rgba(232, 67, 147, 0.45);
-        }
-
-        .no-btn {
-          background: #f0f0f0;
-          color: #999;
-          border: none;
-          border-radius: 50px;
-          padding: 13px 28px;
-          font-family: 'Nunito', sans-serif;
-          font-weight: 700;
+          font-weight: 600;
+          letter-spacing: 1px;
           cursor: pointer;
-          transition: background 0.2s;
-          font-size: 0.95rem;
-          margin: 8px;
+          animation: shimmer 3s linear infinite, ringPulse 2s ease-in-out infinite;
+          transition: transform 0.2s, box-shadow 0.2s;
+          box-shadow: 0 8px 28px rgba(244,63,127,0.35);
         }
-        .no-btn:hover { background: #e8e8e8; }
+        .btn-bloom:hover { transform: scale(1.05) translateY(-3px); box-shadow: 0 14px 36px rgba(244,63,127,0.45); }
+        .btn-bloom:active { transform: scale(0.97); }
 
-        .no-btn-floating {
+        /* ── VERSE GARDEN ── */
+        .verse-garden {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          width: 100%;
+          max-width: 560px;
+          position: relative;
+          z-index: 2;
+        }
+
+        .verse-card {
+          background: rgba(255,255,255,0.75);
+          backdrop-filter: blur(14px);
+          border-radius: 24px;
+          padding: 28px 30px;
+          border: 1.5px solid rgba(253,164,175,0.35);
+          box-shadow: 0 4px 24px rgba(244,63,127,0.07);
+          animation: verseReveal 0.7s cubic-bezier(0.22,1,0.36,1) both;
+          cursor: pointer;
+          transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+          position: relative;
+          overflow: hidden;
+          text-align: left;
+        }
+        .verse-card::before {
+          content: '';
           position: absolute;
-          background: #f0f0f0;
-          color: #aaa;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(255,255,255,0) 60%, rgba(253,164,175,0.15) 100%);
+          border-radius: inherit;
+          pointer-events: none;
+        }
+        .verse-card:hover {
+          transform: translateY(-4px) scale(1.01);
+          box-shadow: 0 10px 40px rgba(244,63,127,0.14);
+          border-color: rgba(244,63,127,0.4);
+        }
+        .verse-card.expanded {
+          border-color: rgba(244,63,127,0.5);
+          box-shadow: 0 8px 40px rgba(244,63,127,0.15);
+        }
+
+        .verse-icon {
+          font-size: 2rem;
+          margin-bottom: 10px;
+          display: block;
+          animation: floatGently 3.5s ease-in-out infinite;
+        }
+        .verse-ml {
+          font-family: 'Tiro Malayalam', serif;
+          font-size: clamp(1.1rem, 2.8vw, 1.35rem);
+          color: var(--text);
+          line-height: 1.9;
+          white-space: pre-line;
+          margin-bottom: 8px;
+        }
+        .verse-translit {
+          font-style: italic;
+          font-size: 0.82rem;
+          color: var(--muted);
+          line-height: 1.7;
+          white-space: pre-line;
+        }
+        .verse-meaning {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px dashed rgba(244,63,127,0.25);
+          font-size: 0.9rem;
+          color: var(--rose);
+          font-style: italic;
+          font-weight: 600;
+          animation: fadeSlide 0.4s ease both;
+        }
+        .verse-number {
+          position: absolute;
+          top: 20px; right: 22px;
+          font-size: 2rem;
+          font-weight: 600;
+          color: rgba(244,63,127,0.12);
+          font-family: 'DM Serif Display', serif;
+          font-style: italic;
+        }
+
+        /* ── QUESTION SECTION ── */
+        .question-wrap {
+          width: 100%;
+          max-width: 560px;
+          z-index: 2;
+          animation: fadeSlide 0.8s ease both;
+        }
+        .question-card {
+          background: rgba(255,255,255,0.8);
+          backdrop-filter: blur(20px);
+          border-radius: 32px;
+          padding: 44px 36px;
+          border: 1.5px solid rgba(253,164,175,0.45);
+          box-shadow: 0 8px 48px rgba(244,63,127,0.1);
+          text-align: center;
+          position: relative;
+          overflow: visible;
+        }
+        .question-ml {
+          font-family: 'Tiro Malayalam', serif;
+          font-size: clamp(1.3rem, 3.5vw, 1.8rem);
+          color: var(--text);
+          line-height: 1.75;
+          margin-bottom: 8px;
+        }
+        .question-en {
+          font-style: italic;
+          color: var(--muted);
+          font-size: 0.92rem;
+          margin-bottom: 36px;
+        }
+
+        .btn-yes {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          background: linear-gradient(135deg, #f43f7f, #d946a8, #f43f7f);
+          background-size: 200% auto;
+          color: white;
           border: none;
           border-radius: 50px;
-          padding: 12px 24px;
-          font-family: 'Nunito', sans-serif;
-          font-weight: 700;
+          font-family: 'Tiro Malayalam', serif;
+          font-size: 1.1rem;
           cursor: pointer;
-          font-size: 0.88rem;
-          transition: opacity 0.3s;
+          box-shadow: 0 8px 32px rgba(244,63,127,0.4);
+          transition: box-shadow 0.2s;
+          animation: shimmer 3s linear infinite, ringPulse 2s ease-in-out infinite;
+          padding: 16px 52px;
           white-space: nowrap;
         }
-        .no-btn-floating:hover { background: #e0e0e0; }
+        .btn-yes:hover { box-shadow: 0 14px 44px rgba(244,63,127,0.5); }
 
-        .shake { animation: shake 0.4s ease; }
+        .btn-no {
+          background: rgba(255,255,255,0.7);
+          color: var(--muted);
+          border: 1.5px solid rgba(253,164,175,0.4);
+          border-radius: 50px;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 0.95rem;
+          cursor: pointer;
+          padding: 13px 30px;
+          white-space: nowrap;
+          transition: background 0.2s;
+        }
+        .btn-no:hover { background: rgba(255,241,247,0.9); }
 
-        /* SUCCESS */
-        .success-emoji {
-          font-size: 6rem;
-          animation: starPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        .btn-no-fly {
+          position: absolute;
+          background: rgba(255,255,255,0.85);
+          color: #c084a0;
+          border: 1.5px solid rgba(253,164,175,0.4);
+          border-radius: 50px;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 0.88rem;
+          cursor: pointer;
+          padding: 10px 22px;
+          white-space: nowrap;
+          backdrop-filter: blur(8px);
+          transition: opacity 0.2s;
+          z-index: 20;
+        }
+
+        .no-taunt {
+          font-style: italic;
+          font-size: 0.85rem;
+          color: var(--blush);
+          margin-top: 18px;
+          animation: fadeSlide 0.3s ease both;
+          min-height: 22px;
+        }
+
+        /* ── YES RESULT ── */
+        .yes-wrap {
+          width: 100%;
+          max-width: 560px;
+          z-index: 2;
+          animation: bloomIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
+          text-align: center;
+        }
+        .yes-card {
+          background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,225,240,0.85));
+          backdrop-filter: blur(20px);
+          border-radius: 32px;
+          padding: 52px 36px;
+          border: 2px solid rgba(253,164,175,0.5);
+          box-shadow: 0 12px 60px rgba(244,63,127,0.18);
+        }
+        .yes-glow {
+          font-size: 5.5rem;
           display: block;
-          margin-bottom: 16px;
+          margin: 0 auto 20px;
+          filter: drop-shadow(0 0 20px rgba(244,63,127,0.5));
+          animation: heartbeat 1.6s ease-in-out infinite, floatGently 3s ease-in-out infinite;
         }
-
-        .confetti-row {
-          font-size: 2rem;
-          animation: bounce 0.8s ease-in-out infinite;
-          letter-spacing: 6px;
+        .yes-title {
+          font-family: 'Tiro Malayalam', serif;
+          font-size: clamp(1.6rem, 4vw, 2.4rem);
+          background: linear-gradient(135deg, #f43f7f, #d946a8, #a855f7);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: gradientShift 3s ease infinite;
+          line-height: 1.4;
+          margin-bottom: 10px;
         }
-
-        .rainbow {
-          font-family: 'Pacifico', cursive;
-          font-size: 2.2rem;
-          animation: rainbowText 2s linear infinite, popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        .yes-poem {
+          font-family: 'Tiro Malayalam', serif;
+          font-size: clamp(1rem, 2.5vw, 1.2rem);
+          color: var(--text);
+          line-height: 2;
+          margin: 24px 0;
+          padding: 24px;
+          background: rgba(255,241,247,0.7);
+          border-radius: 20px;
+          border-left: 3px solid var(--rose);
         }
-
-        .tag {
+        .yes-en {
+          font-style: italic;
+          font-size: 0.9rem;
+          color: var(--muted);
+          margin-top: 8px;
+        }
+        .twinkle-row {
+          font-size: 1.8rem;
+          letter-spacing: 8px;
+          margin-top: 20px;
+          display: block;
+        }
+        .twinkle-row span {
           display: inline-block;
-          background: #fff0f7;
-          border: 1.5px solid #ffb3cf;
-          border-radius: 100px;
-          padding: 4px 14px;
-          font-size: 0.78rem;
-          color: #e84393;
-          font-weight: 700;
-          margin-bottom: 16px;
-          letter-spacing: 1px;
-          text-transform: uppercase;
+          animation: twinkle 1.4s ease-in-out infinite;
+        }
+        .twinkle-row span:nth-child(2) { animation-delay: 0.2s; }
+        .twinkle-row span:nth-child(3) { animation-delay: 0.4s; }
+        .twinkle-row span:nth-child(4) { animation-delay: 0.6s; }
+        .twinkle-row span:nth-child(5) { animation-delay: 0.8s; }
+
+        /* ── SCROLL HINT ── */
+        .scroll-hint {
+          text-align: center;
+          color: var(--muted);
+          font-style: italic;
+          font-size: 0.82rem;
+          margin-top: 6px;
+          opacity: 0.7;
+          z-index: 2;
+          position: relative;
         }
 
-        .tiny-spin {
-          display: inline-block;
-          animation: spin 3s linear infinite;
+        /* ── FOOTER ── */
+        .footer-sig {
+          margin-top: 48px;
+          text-align: center;
+          font-style: italic;
+          font-size: 0.85rem;
+          color: rgba(192,132,160,0.6);
+          z-index: 2;
+          position: relative;
         }
       `}</style>
 
-      {floatingHearts.map((h) => (
-        <FloatingHeart key={h.id} {...h} onDone={removeHeart} />
+      {/* Floating petals */}
+      {petals.map(p => (
+        <span
+          key={p.id}
+          className="petal-fixed"
+          style={{
+            left: p.x,
+            bottom: p.y,
+            fontSize: `${p.size}rem`,
+            animation: `petalDrift ${p.dur}s ${p.delay}s ease-out forwards`,
+          }}
+        >
+          {p.char}
+        </span>
       ))}
 
-      <div className="page-wrap">
-        <div className="card" ref={containerRef}>
+      {/* Decorative bg circles */}
+      <div className="deco-circle" style={{ width: 420, height: 420, top: -100, right: -120, background: "radial-gradient(circle, rgba(253,164,175,0.18) 0%, transparent 70%)" }} />
+      <div className="deco-circle" style={{ width: 360, height: 360, bottom: 40, left: -100, background: "radial-gradient(circle, rgba(240,171,252,0.15) 0%, transparent 70%)" }} />
 
-          {/* ─── STAGE 0: INTRO ─── */}
-          {stage === 0 && (
-            <>
-              <span className="mascot">🐻</span>
-              <div className="tag">⚠️ Very Important Notice</div>
-              <h1 className="title">Excuse me, ma'am</h1>
-              <p className="subtitle">
-                I have conducted a thorough scientific investigation<br />
-                and the results are <em>quite alarming</em>.<br /><br />
-                It appears I may be <strong>completely, utterly,<br />and hopelessly in love with you.</strong><br /><br />
-                Please review the evidence before proceeding.
-              </p>
-              <button className="btn-primary" onClick={() => setStage(1)}>
-                Show me the evidence 🔍
-              </button>
-            </>
-          )}
+      <div className="page-bg">
 
-          {/* ─── STAGE 1: REASONS ─── */}
-          {stage === 1 && (
-            <>
-              <span className="mascot">🕵️</span>
-              <div className="tag">Exhibit {reasonIdx + 1} of {excuses.length}</div>
-              <h1 className="title" style={{ fontSize: "1.6rem" }}>
-                Why I Like You
-              </h1>
+        {/* Header */}
+        <header className="site-header">
+          <span className="eyebrow">✦ ഒരു കവി, നിനക്കായി ✦</span>
+          <h1>പ്രേമത്തിന്റെ<br />പൂന്തോട്ടം</h1>
+          <p className="sub">A garden of love, blooming in Malayalam</p>
+        </header>
 
-              <div className="progress-dots">
-                {excuses.map((_, i) => (
+        <div className="divider">
+          <div className="divider-line" />
+          <span className="divider-icon">🌸</span>
+          <div className="divider-line" />
+        </div>
+
+        {/* ── PHASE: INTRO ── */}
+        {phase === "intro" && (
+          <div className="glass-card">
+            <span className="big-heart">💗</span>
+            <p className="intro-ml">
+              "ഒരു കത്ത് എഴുതാൻ തുടങ്ങി,<br />
+              വാക്കുകൾ പൂക്കളായി..."
+            </p>
+            <p className="intro-en">
+              I started writing a letter,<br />
+              and the words turned into flowers...
+            </p>
+            <button
+              className="btn-bloom"
+              onClick={() => { setPhase("blooming"); burst(10); }}
+            >
+              🌸 പൂക്കൾ തുറക്കൂ
+            </button>
+          </div>
+        )}
+
+        {/* ── PHASE: BLOOMING ── */}
+        {phase === "blooming" && (
+          <>
+            <div className="verse-garden">
+              {VERSES.map((v, i) => (
+                unlockedIdx >= i && (
                   <div
-                    key={i}
-                    className={`dot ${i < reasonIdx ? "done" : ""} ${i === reasonIdx ? "active" : ""}`}
-                  />
-                ))}
-              </div>
+                    key={v.id}
+                    className={`verse-card ${activeVerse === v.id ? "expanded" : ""}`}
+                    style={{ animationDelay: `${i * 0.08}s`, borderColor: activeVerse === v.id ? v.color : undefined }}
+                    onClick={() => { setActiveVerse(activeVerse === v.id ? null : v.id); burst(5); }}
+                  >
+                    <span className="verse-number">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="verse-icon">{v.icon}</span>
+                    <p className="verse-ml">{v.malayalam}</p>
+                    <p className="verse-translit">{v.transliteration}</p>
+                    {activeVerse === v.id && (
+                      <p className="verse-meaning">✨ {v.meaning}</p>
+                    )}
+                  </div>
+                )
+              ))}
+            </div>
 
-              <div className="reason-badge" key={reasonIdx}>
-                ✨ {excuses[reasonIdx]}
-              </div>
-
-              {reasonIdx < excuses.length - 1 ? (
+            {unlockedIdx >= VERSES.length - 1 && (
+              <>
+                <div className="divider" style={{ marginTop: 32 }}>
+                  <div className="divider-line" />
+                  <span className="divider-icon">💕</span>
+                  <div className="divider-line" />
+                </div>
                 <button
-                  className="btn-primary"
-                  onClick={() => setReasonIdx((i) => i + 1)}
+                  className="btn-bloom"
+                  style={{ marginBottom: 8 }}
+                  onClick={() => { setPhase("question"); burst(12); }}
                 >
-                  Next reason 👉
+                  💌 ഒരു ചോദ്യം കൂടി...
                 </button>
-              ) : (
-                <button
-                  className="btn-primary"
-                  onClick={() => setStage(2)}
-                  style={{ background: "linear-gradient(135deg, #ff6b9d, #c2185b)" }}
-                >
-                  OK I've seen enough 💌
-                </button>
-              )}
-            </>
-          )}
+                <p className="scroll-hint">tap each verse to reveal its meaning 🌸</p>
+              </>
+            )}
+          </>
+        )}
 
-          {/* ─── STAGE 2: THE QUESTION ─── */}
-          {stage === 2 && (
-            <>
-              <span className="mascot" style={{ animationDuration: "0.8s" }}>🥺</span>
-              <h1 className="title">Sooo...</h1>
-              <p className="subtitle">
-                After extensive research, multiple sleepless nights,<br />
-                and at least <em>three panic attacks</em>...<br /><br />
-                <strong>Will you be my girlfriend?</strong> 💝<br /><br />
-                <span style={{ fontSize: "0.85rem", color: "#c2185b", opacity: 0.8 }}>
-                  (The YES button keeps growing. Just saying.)
-                </span>
+        {/* ── PHASE: QUESTION ── */}
+        {phase === "question" && (
+          <div className="question-wrap">
+            <div className="question-card" ref={containerRef}>
+              <span style={{ fontSize: "3.5rem", display: "block", marginBottom: 16, animation: "floatGently 3s ease-in-out infinite" }}>🥀</span>
+
+              <p className="question-ml">
+                "നിന്റെ ജീവിതത്തിലെ<br />
+                ഒരു ഇലയാകാൻ...<br />
+                ഒരു ചെറിയ നിലാവാകാൻ...<br />
+                സമ്മതമോ?" 🌙
+              </p>
+              <p className="question-en">
+                May I be a leaf in your life,<br />
+                a small moonlight beside you...?
               </p>
 
-              <div className="question-zone" style={{ minHeight: noPos.x !== null ? 200 : "auto" }}>
-                <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 4 }}>
-                  <button
-                    className={`yes-btn ${shake ? "shake" : ""}`}
-                    style={{ transform: `scale(${yesScale})`, margin: `${8 + noCount * 2}px 16px` }}
-                    onClick={handleYes}
-                  >
-                    YES 💖
-                  </button>
+              <div style={{ position: "relative", minHeight: noCount > 0 ? 220 : "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+                <button
+                  className="btn-yes"
+                  style={{ transform: `scale(${yesGrow})`, margin: `${Math.min(noCount * 4, 28)}px auto` }}
+                  onClick={handleYes}
+                >
+                  🌸 അതേ... സമ്മതം!
+                </button>
 
-                  {noPos.x === null ? (
-                    <button className="no-btn" onClick={handleNo}>
-                      No
-                    </button>
-                  ) : (
-                    <button
-                      className="no-btn-floating"
-                      style={{ left: noPos.x, top: noPos.y }}
-                      onClick={handleNo}
-                    >
-                      {currentNoMsg}
-                    </button>
-                  )}
-                </div>
+                {noCount === 0 ? (
+                  <button className="btn-no" onClick={handleNoClick}>
+                    ഇല്ല... 🙈
+                  </button>
+                ) : (
+                  <button
+                    className="btn-no-fly"
+                    style={noStyle}
+                    onClick={handleNoClick}
+                  >
+                    {noLabel}
+                  </button>
+                )}
               </div>
 
               {noCount > 0 && (
-                <p style={{ marginTop: 20, fontSize: "0.85rem", color: "#e84393", animation: "slideUp 0.3s ease" }}>
-                  {noCount === 1 && "The NO button seems to be malfunctioning 🤔"}
-                  {noCount === 2 && "It keeps running away... very suspicious 👀"}
-                  {noCount === 3 && "The YES button is flattered by the attention 💅"}
-                  {noCount >= 4 && "At this point YES is basically a planet 🪐"}
+                <p className="no-taunt">
+                  {noCountMsgs[Math.min(noCount, noCountMsgs.length - 1)]}
                 </p>
               )}
-            </>
-          )}
+            </div>
+          </div>
+        )}
 
-          {/* ─── STAGE 3: SUCCESS ─── */}
-          {stage === 3 && (
-            <>
-              <span className="success-emoji">🎉</span>
-              <div className="confetti-row">🎊💖✨🥳💕🌟</div>
-              <br />
-              <p className="rainbow">SHE SAID YES!!!</p>
-              <br />
-              <p className="subtitle" style={{ animation: "slideUp 0.5s 0.4s ease both" }}>
-                Outstanding decision. 10/10. Would recommend.<br /><br />
-                <strong>You've just made one very happy bear.</strong> 🐻💕<br /><br />
-                <em>(I promise to always share snacks,<br />laugh at your jokes, and be your person.)</em>
+        {/* ── PHASE: YES ── */}
+        {phase === "yes" && (
+          <div className="yes-wrap">
+            <div className="yes-card">
+              <span className="yes-glow">🌺</span>
+
+              <h2 className="yes-title">
+                "ഒരു പൂ വിരിഞ്ഞു...
+                <br />ഹൃദയത്തിൽ!"
+              </h2>
+              <p style={{ fontStyle: "italic", color: "var(--muted)", fontSize: "0.9rem" }}>
+                A flower bloomed... in my heart!
               </p>
-              <div style={{ fontSize: "2.5rem", animation: "bounce 0.7s ease-in-out infinite", marginTop: 12 }}>
-                🥰
-              </div>
-            </>
-          )}
 
-        </div>
+              <div className="yes-poem">
+                "നിന്റെ ഒരു വാക്ക് —<br />
+                ആയിരം കവിതകളായി;<br />
+                നിന്റെ ഒരു ചിരി —<br />
+                ജീവിതം സുന്ദരമായി.<br />
+                ഇനി നീ — എന്റെ<br />
+                ഏറ്റവും പ്രിയപ്പെട്ട കവിത." 💗
+                <p className="yes-en">
+                  Your one word became a thousand poems;<br />
+                  your one smile made life beautiful.<br />
+                  From now — you are my most beloved poem.
+                </p>
+              </div>
+
+              <span className="twinkle-row">
+                <span>🌸</span><span>💕</span><span>✨</span><span>💗</span><span>🌺</span>
+              </span>
+            </div>
+          </div>
+        )}
+
+        <p className="footer-sig">
+          🌸 written with love, in the language of Kerala 🌸
+        </p>
+
       </div>
     </>
   );
